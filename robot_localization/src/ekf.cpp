@@ -105,7 +105,7 @@ namespace RobotLocalization
     kalmanGainSubset.setZero();
     innovationSubset.setZero();
 
-    // Now build the sub-matrices from the full-sized matrices
+    // Now build the sub-matrices from the full-sized matrices (anypart  which isn't update corresponds to 0 in the matrices)
     for (size_t i = 0; i < updateSize; ++i)
     {
       measurementSubset(i) = measurement.measurement_(updateIndices[i]);
@@ -145,6 +145,8 @@ namespace RobotLocalization
 
     // The state-to-measurement function, h, will now be a measurement_size x full_state_size
     // matrix, with ones in the (i, i) locations of the values to be updated
+    // H is a matrix of 0s and 1s, since all the measurements sources measure the state (or parts of it) directly.
+    // We don't accept raw measurement (i.e. IMU data), only measurements of the state
     for (size_t i = 0; i < updateSize; ++i)
     {
       stateToMeasurementSubset(i, updateIndices[i]) = 1;
@@ -160,6 +162,7 @@ namespace RobotLocalization
     Eigen::MatrixXd hphrInv  = (stateToMeasurementSubset * pht + measurementCovarianceSubset).inverse();
     kalmanGainSubset.noalias() = pht * hphrInv;
 
+    // z - Hx
     innovationSubset = (measurementSubset - stateSubset);
 
     // Wrap angles in the innovation
@@ -181,7 +184,7 @@ namespace RobotLocalization
       }
     }
 
-    // (2) Check Mahalanobis distance between mapped measurement and state.
+    // (2) Check Mahalanobis distance between mapped measurement and state. true if measurement is inside threshold
     if (checkMahalanobisThreshold(innovationSubset, hphrInv, measurement.mahalanobisThresh_))
     {
       // (3) Apply the gain to the difference between the state and measurement: x = x + K(z - Hx)
@@ -235,6 +238,7 @@ namespace RobotLocalization
     double sy = ::sin(yaw);
     double cy = ::cos(yaw);
 
+    // compute controlAcceleration_ if use_control = true
     prepareControl(referenceTime, delta);
 
     // Prepare the transfer function
@@ -362,6 +366,7 @@ namespace RobotLocalization
     }
 
     // (1) Apply control terms, which are actually accelerations
+    // if use_control=false => prepare_control={} => controlAcceleration_ = 0 => state_(velocities, accelerations)(t+1) = state_(velocities, accelerations)(t)
     state_(StateMemberVroll) += controlAcceleration_(ControlMemberVroll) * delta;
     state_(StateMemberVpitch) += controlAcceleration_(ControlMemberVpitch) * delta;
     state_(StateMemberVyaw) += controlAcceleration_(ControlMemberVyaw) * delta;
