@@ -105,7 +105,7 @@ namespace RobotLocalization
     kalmanGainSubset.setZero();
     innovationSubset.setZero();
 
-    // Now build the sub-matrices from the full-sized matrices (anypart  which isn't update corresponds to 0 in the matrices)
+    // Now build the sub-matrices from the full-sized matrices (any part which isn't update corresponds to 0 in the matrices)
     for (size_t i = 0; i < updateSize; ++i)
     {
       measurementSubset(i) = measurement.measurement_(updateIndices[i]);
@@ -190,7 +190,7 @@ namespace RobotLocalization
       // (3) Apply the gain to the difference between the state and measurement: x = x + K(z - Hx)
       state_.noalias() += kalmanGainSubset * innovationSubset;
 
-      // (4) Update the estimate error covariance using the Joseph form: (I - KH)P(I - KH)' + KRK'
+      // (4) Update the estimate error covariance using the Joseph form: P = (I - KH)P(I - KH)' + KRK'
       Eigen::MatrixXd gainResidual = identity_;
       gainResidual.noalias() -= kalmanGainSubset * stateToMeasurementSubset;
       estimateErrorCovariance_ = gainResidual * estimateErrorCovariance_ * gainResidual.transpose();

@@ -15,15 +15,16 @@ base_link_frame: base_filter_link       # Defaults to "base_link" if unspecified
 map_frame: map                   # Defaults to the value of odom_frame if unspecified
 #world_frame: map
 
+## x, y, z, roll, pitch, yaw, vx, vy, vz, vroll (=vx), vpitch (=vy), vyaw (=vz), ax, ay, az.
+
+# use velocity measurements from odomatry to improve accuracy (better just use velocities than velocisiton+positions)
 odom0: /odom
-## x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az.
-#
 odom0_config: [false, false,  false,
                false, false, true,
                true, true, false,
                false, false, false,
                false, false, false]
-odom0_differential: true
+odom0_differential: true #TODO change to false since using velocity data and use vz=vyaw instead of yaw! (if still use AMCl, otherwise fuse yaw)
 
 odom0_relative: false
 
@@ -43,7 +44,7 @@ pose1_config: [true, true,  false,
                false, false, true,
                true, true, false,
                false, false, false,
-               false, false, false]
+               false, false, false] # TODO amcl doesn't provide velocities!
 pose1_differential: false
 pose1_relative: false
 #pose1_queue_size: 5
