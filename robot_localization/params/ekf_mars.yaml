@@ -19,7 +19,6 @@ map_frame: map                   # Defaults to the value of odom_frame if unspec
 
 # use velocity measurements from odomatry to improve accuracy (better just use velocities than velocisiton+positions)
 odom0: /odom
-
 odom0_config: [false, false,  false,
                false, false, true,
                true, true, false,
