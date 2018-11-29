@@ -1,4 +1,4 @@
-frequency: 50
+frequency: 40
 
 two_d_mode: true
 
@@ -6,7 +6,7 @@ print_diagnostics: true
 
 debug: false
 
-publish_tf: true
+publish_tf: false
 
 publish_acceleration: false
 
@@ -19,13 +19,13 @@ map_frame: map                   # Defaults to the value of odom_frame if unspec
 
 # use velocity measurements from odomatry to improve accuracy (better just use velocities than velocisiton+positions)
 odom0: /odom
+
 odom0_config: [false, false,  false,
                false, false, true,
                true, true, false,
-               false, false, false,
+               false, false, true,
                false, false, false]
-odom0_differential: true #TODO change to false since using velocity data and use vz=vyaw instead of yaw! (if still use AMCl, otherwise fuse yaw)
-
+odom0_differential: false #TODO change to false since using velocity data and use vz=vyaw instead of yaw! (if still use AMCl, otherwise fuse yaw)
 odom0_relative: false
 
 
@@ -37,34 +37,36 @@ pose0_config: [true,  true,  false,
                false, false, false]
 pose0_differential: false
 pose0_relative: false
+# pose0_rejection_threshold: 3
 #pose0_queue_size: 5
 
-pose1: /amcl_pose
-pose1_config: [true, true,  false,
-               false, false, true,
-               true, true, false,
-               false, false, false,
-               false, false, false] # TODO amcl doesn't provide velocities!
-pose1_differential: false
-pose1_relative: false
+
+#pose1: /amcl_pose
+#pose1_config: [true, true,  false,
+#               false, false, true,
+#               true, true, false,
+#               false, false, false,
+#               false, false, false]
+#pose1_differential: false
+#pose1_relative: false
 #pose1_queue_size: 5
 #pose1_nodelay: false
 
-process_noise_covariance: [0.05, 0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0.05, 0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0.06, 0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0.03, 0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0.03, 0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0.06, 0,     0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0,    0.025, 0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0,    0,     0.025, 0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0,    0,     0,     0.04, 0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0.01, 0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0.01, 0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0.02, 0,    0,    0,
+process_noise_covariance: [3e-5, 0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    3e-5,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    3e-5, 0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    1e-4, 0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    1e-4, 0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    1e-9, 0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    1e-6, 0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     1e-6, 0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     1e-6, 0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    1e-4, 0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    1e-4, 0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    1e-9, 0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0.01, 0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0.01, 0,
-                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0.015]
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0.0001]
 
 initial_estimate_covariance: [1e-9, 0,    0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    1e-9, 0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
