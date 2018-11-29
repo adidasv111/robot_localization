@@ -24,7 +24,7 @@ odom0_config: [false, false,  false,
                true, true, false,
                false, false, true,
                false, false, false]
-odom0_differential: false #TODO change to false since using velocity data and use vz=vyaw instead of yaw! (if still use AMCl, otherwise fuse yaw)
+odom0_differential: false #TODO only use vz=vyaw instead of yaw! (but must start filter smae time as odometry)
 odom0_relative: false
 
 
