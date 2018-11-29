@@ -1,4 +1,4 @@
-frequency: 40
+frequency: 30
 
 two_d_mode: true
 
@@ -6,7 +6,7 @@ print_diagnostics: true
 
 debug: false
 
-publish_tf: false
+publish_tf: true
 
 publish_acceleration: false
 
