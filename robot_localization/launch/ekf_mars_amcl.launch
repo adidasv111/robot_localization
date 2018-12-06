@@ -2,6 +2,6 @@
   <node pkg="robot_localization" type="ekf_localization_node" name="ekf_mars_amcl" clear_params="true">
     <rosparam command="load" file="$(find robot_localization)/params/ekf_mars_amcl.yaml" />
 
-    <remap from="odometry/filtered" to="/filter_pose"/>
+    <remap from="odometry/filtered" to="/localization_state"/>
   </node>
 </launch>

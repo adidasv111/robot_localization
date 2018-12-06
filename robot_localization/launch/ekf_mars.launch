@@ -1,7 +1,11 @@
 <launch>
-  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_mars" clear_params="true">
+  <!-- <node pkg="robot_localization" type="ekf_localization_node_initialized" name="ekf_mars" clear_params="true" output="screen"> -->
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_mars" clear_params="true" output="screen">
     <rosparam command="load" file="$(find robot_localization)/params/ekf_mars.yaml" />
 
-    <remap from="odometry/filtered" to="/filter_pose"/>
+    <remap from="odometry/filtered" to="/localization_state"/>
+    <remap from="set_pose" to="optical_initial_pose"/> <!-- Use to set filter state from initial pose -->
   </node>
 </launch>
+
+

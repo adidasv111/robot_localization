@@ -274,3 +274,9 @@ initial_estimate_covariance: [1e-9, 0,    0,    0,    0,    0,    0,    0,    0,
                               0,    0,    0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    1e-9, 0,
                               0,    0,    0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    1e-9]
 
+#Starts the filter with the specified state. The state is given as a 15-D vector of doubles, in the same order as the sensor configurations.
+initial_state: [5.0,  4.0,  3.0,
+                0.0,  0.0,  1.57,
+                0.1,  0.2,  0.3,
+                0.0,  0.0,  0.0,
+                0.0,  0.0,  0.0]

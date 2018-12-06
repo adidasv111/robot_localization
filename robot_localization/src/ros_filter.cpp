@@ -1954,7 +1954,7 @@ namespace RobotLocalization
   void RosFilter<T>::setPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
   {
     RF_DEBUG("------ RosFilter::setPoseCallback ------\nPose message:\n" << *msg);
-
+    std::cout << "------ RosFilter::setPoseCallback ------\nPose message:\n" << *msg << std::endl;
     std::string topicName("setPose");
 
     // Get rid of any initial poses (pretend we've never had a measurement)
