@@ -38,6 +38,7 @@
 #include "robot_localization/filter_base.h"
 
 #include <robot_localization/SetPose.h>
+#include <robot_localization/ToggleFilterProcessing.h>
 
 #include <ros/ros.h>
 #include <std_msgs/String.h>
@@ -121,6 +122,13 @@ template<class T> class RosFilter
     //! @brief Resets the filter to its initial state
     //!
     void reset();
+
+    //! @brief Service callback to toggle processing measurements for a standby mode but continuing to publish
+    //! @param[in] request - The state requested, on (True) or off (False)
+    //! @param[out] response - status if upon success
+    //! @return boolean true if successful, false if not
+    bool toggleFilterProcessingCallback(robot_localization::ToggleFilterProcessing::Request&,
+                                        robot_localization::ToggleFilterProcessing::Response&);
 
     //! @brief Callback method for receiving all acceleration (IMU) messages
     //! @param[in] msg - The ROS IMU message to take in.
@@ -290,6 +298,10 @@ template<class T> class RosFilter
     //!
     void clearExpiredHistory(const double cutoffTime);
 
+    //! @brief Clears measurement queue
+    //!
+    void clearMeasurementQueue();
+
     //! @brief Adds a diagnostic message to the accumulating map and updates the error level
     //! @param[in] errLevel - The error level of the diagnostic
     //! @param[in] topicAndClass - The sensor topic (if relevant) and class of diagnostic
@@ -397,7 +409,16 @@ template<class T> class RosFilter
 
     //! @brief tf frame name for the robot's body frame
     //!
+    //! All velocity and linear acceleration data is transformed into this frame before being fused
+    //!
     std::string baseLinkFrameId_;
+
+    //! @brief tf frame name for the robot's body frame
+    //!
+    //! When the final state is computed, we "override" the output transform and message to have this frame for its
+    //! child_frame_id. This helps to enable disconnected TF trees when multiple EKF instances are being run.
+    //!
+    std::string baseLinkOutputFrameId_;
 
     //! @brief Subscribes to the control input topic
     //!
@@ -568,6 +589,11 @@ template<class T> class RosFilter
     //!
     ros::ServiceServer enableFilterSrv_;
 
+    //! @brief Service that allows another node to toggle on/off filter processing while still publishing.
+    //! Uses a robot_localization ToggleFilterProcessing service.
+    //!
+    ros::ServiceServer toggleFilterProcessingSrv_;
+
     //! @brief Contains the state vector variable names in string format
     //!
     std::vector<std::string> stateVariableNames_;
@@ -609,6 +635,9 @@ template<class T> class RosFilter
 
     //! @brief Whether the filter is enabled or not. See disabledAtStartup_.
     bool enabled_;
+
+    //! $brief Whether the filter should process new measurements or not.
+    bool toggledOn_;
 
     //! @brief Message that contains our latest transform (i.e., state)
     //!

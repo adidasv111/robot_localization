@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(robot_localization)
 
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+  message("${PROJECT_NAME}: You did not request a specific build type: selecting 'RelWithDebInfo'.")
+  set(CMAKE_BUILD_TYPE RelWithDebInfo)
+endif()
+
 find_package(catkin REQUIRED COMPONENTS
   diagnostic_msgs
   diagnostic_updater
@@ -47,6 +52,7 @@ add_service_files(
     GetState.srv
     SetDatum.srv
     SetPose.srv
+    ToggleFilterProcessing.srv
 )
 
 generate_messages(
