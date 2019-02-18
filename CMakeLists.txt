@@ -65,7 +65,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS
     include
-  LIBRARIES 
+  LIBRARIES
     ekf
     filter_base
     filter_utilities
@@ -127,6 +127,9 @@ add_executable(ukf_localization_node src/ukf_localization_node.cpp)
 add_executable(navsat_transform_node src/navsat_transform_node.cpp)
 add_executable(robot_localization_listener_node src/robot_localization_listener_node.cpp)
 
+add_executable(ekf_localization_node_initialized src/ekf_localization_node_initialized.cpp)
+
+
 # Dependencies
 add_dependencies(filter_base ${PROJECT_NAME}_gencpp)
 add_dependencies(navsat_transform ${PROJECT_NAME}_gencpp)
@@ -148,6 +151,8 @@ target_link_libraries(ukf_localization_node ros_filter ${catkin_LIBRARIES})
 target_link_libraries(navsat_transform filter_utilities ros_filter_utilities ${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
 target_link_libraries(navsat_transform_node navsat_transform ${catkin_LIBRARIES})
 
+target_link_libraries(ekf_localization_node_initialized ros_filter ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
@@ -167,6 +172,9 @@ install(TARGETS
   robot_localization_listener_node
   ukf
   ukf_localization_node
+
+  ekf_localization_node_initialized
+
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
