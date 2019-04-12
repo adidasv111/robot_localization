@@ -22,7 +22,7 @@ odom0: /odom
 odom0_config: [false, false,  false,
                false, false, false,
                true, true, false,
-               false, false, false,
+               false, false, true,
                false, false, false]
 odom0_differential: false #TODO only use vz=vyaw instead of yaw! (but must start filter smae time as odometry)
 odom0_relative: false
