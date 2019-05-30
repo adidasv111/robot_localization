@@ -332,6 +332,11 @@ namespace RobotLocalization
     state_ = state;
   }
 
+  void FilterBase::setPredictedState(const Eigen::VectorXd &state)
+  {
+    predictedState_ = state;
+  }
+
   void FilterBase::validateDelta(double &delta)
   {
     // This handles issues with ROS time when use_sim_time is on and we're playing from bags.

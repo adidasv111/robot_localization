@@ -327,6 +327,8 @@ class FilterBase
     //!
     void setState(const Eigen::VectorXd &state);
 
+    void setPredictedState(const Eigen::VectorXd &state);
+
     //! @brief Ensures a given time delta is valid (helps with bag file playback issues)
     //!
     //! @param[in] delta - The time delta, in seconds, to validate

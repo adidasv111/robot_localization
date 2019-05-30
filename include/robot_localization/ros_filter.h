@@ -670,6 +670,8 @@ template<class T> class RosFilter
     // front() refers to the measurement with the earliest timestamp.
     // back() refers to the measurement with the latest timestamp.
     MeasurementHistoryDeque measurementHistory_;
+
+    Eigen::VectorXd last_valid_state_;
 };
 
 }  // namespace RobotLocalization

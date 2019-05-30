@@ -1868,7 +1868,15 @@ namespace RobotLocalization
         {
           ROS_ERROR_STREAM("Critical Error, NaNs were detected in the output state of the filter." <<
                 " This was likely due to poorly coniditioned process, noise, or sensor covariances.");
+
+          filter_.reset();
+          filter_.setState(last_valid_state_);
+          filter_.setPredictedState(last_valid_state_);
+
+          continue;
         }
+
+        last_valid_state_ = filter_.getState();
 
         // If the worldFrameId_ is the odomFrameId_ frame, then we can just send the transform. If the
         // worldFrameId_ is the mapFrameId_ frame, we'll have some work to do.
