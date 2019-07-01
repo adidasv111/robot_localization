@@ -409,6 +409,12 @@ class FilterBase
     //!
     Eigen::VectorXd controlAcceleration_;
 
+    //! @brief Variable that gets updated every time we process a measurement and we have a valid control
+    //!
+    Eigen::VectorXd controlVelosity_;
+
+    double lastControlTime_;
+
     //! @brief Gains applied to deceleration derived from control term
     //!
     std::vector<double> decelerationGains_;
@@ -466,6 +472,10 @@ class FilterBase
     //! @brief The time of reception of the most recent control term
     //!
     double latestControlTime_;
+
+    //! @brief The time difference between control term
+    //!
+    double controlDelta_;
 
     //! @brief Holds the last predicted state of the filter
     //!

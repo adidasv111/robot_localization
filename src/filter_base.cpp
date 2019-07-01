@@ -216,17 +216,17 @@ namespace RobotLocalization
                "Measurement time is " << std::setprecision(20) << measurement.time_ <<
                ", last measurement time is " << lastMeasurementTime_ << ", delta is " << delta << "\n");
 
-      // Only want to carry out a prediction if it's
-      // forward in time. Otherwise, just correct.
+      // // Only want to carry out a prediction if it's
+      // // forward in time. Otherwise, just correct.
       if (delta > 0)
       {
         validateDelta(delta);
-        predict(measurement.time_, delta);
+        // predict(measurement.time_, delta);
 
         // Return this to the user
         predictedState_ = state_;
       }
-
+      // std::cout << "correct step is called" << std::endl;
       correct(measurement);
     }
     else
@@ -264,7 +264,11 @@ namespace RobotLocalization
 
   void FilterBase::setControl(const Eigen::VectorXd &control, const double controlTime)
   {
-    latestControl_ = control;
+    // controlVelosity_ = control;
+    controlVelosity_ = control;
+    // std::cout << "controlVelosity_(ControlMemberVyaw): " << controlVelosity_(ControlMemberVyaw) << std::endl;
+    controlDelta_ = controlTime - latestControlTime_;
+    // std::cout << "controlDelta_: " << controlDelta_ << std::endl;
     latestControlTime_ = controlTime;
   }
 
@@ -351,7 +355,30 @@ namespace RobotLocalization
 
   void FilterBase::prepareControl(const double referenceTime, const double predictionDelta)
   {
-    controlAcceleration_.setZero();
+    // controlAcceleration_.setZero();
+
+    // if (useControl_)
+    // {
+    //   bool timedOut = ::fabs(referenceTime - latestControlTime_) >= controlTimeout_;
+
+    //   if (timedOut)
+    //   {
+    //     FB_DEBUG("Control timed out. Reference time was " << referenceTime << ", latest control time was " <<
+    //       latestControlTime_ << ", control timeout was " << controlTimeout_ << "\n");
+    //   }
+
+    //   for (size_t controlInd = 0; controlInd < TWIST_SIZE; ++controlInd)
+    //   {
+    //     if (controlUpdateVector_[controlInd])
+    //     {
+    //       controlAcceleration_(controlInd) = computeControlAcceleration(state_(controlInd + POSITION_V_OFFSET),
+    //         (timedOut ? 0.0 : latestControl_(controlInd)), accelerationLimits_[controlInd],
+    //         accelerationGains_[controlInd], decelerationLimits_[controlInd], decelerationGains_[controlInd]);
+    //     }
+    //   }
+    // }
+
+    controlVelosity_.setZero();
 
     if (useControl_)
     {
@@ -367,9 +394,7 @@ namespace RobotLocalization
       {
         if (controlUpdateVector_[controlInd])
         {
-          controlAcceleration_(controlInd) = computeControlAcceleration(state_(controlInd + POSITION_V_OFFSET),
-            (timedOut ? 0.0 : latestControl_(controlInd)), accelerationLimits_[controlInd],
-            accelerationGains_[controlInd], decelerationLimits_[controlInd], decelerationGains_[controlInd]);
+            controlVelosity_(controlInd) = timedOut ? 0.0 : latestControl_(controlInd);
         }
       }
     }
