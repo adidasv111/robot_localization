@@ -435,6 +435,10 @@ class FilterBase
     //!
     double controlTimeout_;
 
+    //! @brief debug output counter, to decrease the rate of debug messages' display
+    //!
+    int displayCounter_;
+
     //! @brief Covariance matrices can be incredibly unstable. We can
     //! add a small value to it at each iteration to help maintain its
     //! positive-definite property.

@@ -270,7 +270,6 @@ namespace RobotLocalization
     latestControl_(ControlMemberVroll) = msg->twist.twist.angular.x;
     latestControl_(ControlMemberVpitch) = msg->twist.twist.angular.y;
     latestControl_(ControlMemberVyaw) = msg->twist.twist.angular.z;
-    // std::cout << "delta odom: " << latestControlTime_.toSec()-(msg->header.stamp).toSec() << std::endl;
     latestControlTime_ = msg->header.stamp;
 
     // Update the filter with this control term

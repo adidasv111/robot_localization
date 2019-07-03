@@ -50,6 +50,7 @@ namespace RobotLocalization
     controlVelosity_.setZero();
     controlDelta_ = 0;
     latestControlTime_ = ros::Time::now().toSec();
+    displayCounter_ = 0;
   }
 
   Ekf::~Ekf()
@@ -157,10 +158,10 @@ namespace RobotLocalization
       stateToMeasurementSubset(i, updateIndices[i]) = 1;
     }
 
-    ROS_INFO_STREAM("Current state subset is:\n" << stateSubset <<
-             "\nMeasurement subset is:\n" << measurementSubset <<
-             "\nMeasurement covariance subset is:\n" << measurementCovarianceSubset <<
-             "\nState-to-measurement subset is:\n" << stateToMeasurementSubset << "\n");
+    // ROS_INFO_STREAM("Current state subset is:\n" << stateSubset <<
+    //          "\nMeasurement subset is:\n" << measurementSubset <<
+    //          "\nMeasurement covariance subset is:\n" << measurementCovarianceSubset <<
+    //          "\nState-to-measurement subset is:\n" << stateToMeasurementSubset << "\n");
 
     // (1) Compute the Kalman gain: K = (PH') / (HPH' + R)
     Eigen::MatrixXd pht = estimateErrorCovariance_ * stateToMeasurementSubset.transpose();
@@ -202,7 +203,6 @@ namespace RobotLocalization
       estimateErrorCovariance_.noalias() += kalmanGainSubset *
                                             measurementCovarianceSubset *
                                             kalmanGainSubset.transpose();
-      // std::cout << "update state with kalman gain." << std::endl;
       // Handle wrapping of angles
       wrapStateAngles();
 
@@ -248,36 +248,10 @@ namespace RobotLocalization
     // prepareControl(referenceTime, delta);
 
     // Prepare the transfer function
-    // transferFunction_(StateMemberX, StateMemberVx) = cy * cp * delta;
-    // transferFunction_(StateMemberX, StateMemberVy) = (cy * sp * sr - sy * cr) * delta;
-    // transferFunction_(StateMemberX, StateMemberVz) = (cy * sp * cr + sy * sr) * delta;
-    // transferFunction_(StateMemberX, StateMemberAx) = 0.5 * transferFunction_(StateMemberX, StateMemberVx) * delta;
-    // transferFunction_(StateMemberX, StateMemberAy) = 0.5 * transferFunction_(StateMemberX, StateMemberVy) * delta;
-    // transferFunction_(StateMemberX, StateMemberAz) = 0.5 * transferFunction_(StateMemberX, StateMemberVz) * delta;
-    // transferFunction_(StateMemberY, StateMemberVx) = sy * cp * delta;
-    // transferFunction_(StateMemberY, StateMemberVy) = (sy * sp * sr + cy * cr) * delta;
-    // transferFunction_(StateMemberY, StateMemberVz) = (sy * sp * cr - cy * sr) * delta;
-    // transferFunction_(StateMemberY, StateMemberAx) = 0.5 * transferFunction_(StateMemberY, StateMemberVx) * delta;
-    // transferFunction_(StateMemberY, StateMemberAy) = 0.5 * transferFunction_(StateMemberY, StateMemberVy) * delta;
-    // transferFunction_(StateMemberY, StateMemberAz) = 0.5 * transferFunction_(StateMemberY, StateMemberVz) * delta;
 
-    // transferFunction_(StateMemberZ, StateMemberVx) = -sp * controlDelta_;
-    // transferFunction_(StateMemberZ, StateMemberVy) = cp * sr * controlDelta_;
-    // transferFunction_(StateMemberZ, StateMemberVz) = cp * cr * controlDelta_;
-    // transferFunction_(StateMemberZ, StateMemberAx) = 0.5 * transferFunction_(StateMemberZ, StateMemberVx) * controlDelta_;
-    // transferFunction_(StateMemberZ, StateMemberAy) = 0.5 * transferFunction_(StateMemberZ, StateMemberVy) * controlDelta_;
-    // transferFunction_(StateMemberZ, StateMemberAz) = 0.5 * transferFunction_(StateMemberZ, StateMemberVz) * controlDelta_;
-    // transferFunction_(StateMemberRoll, StateMemberVroll) = controlDelta_;
-    // transferFunction_(StateMemberRoll, StateMemberVpitch) = sr * tp * controlDelta_;
-    // transferFunction_(StateMemberRoll, StateMemberVyaw) = cr * tp * controlDelta_;
-    // transferFunction_(StateMemberPitch, StateMemberVpitch) = cr * controlDelta_;
-    // transferFunction_(StateMemberPitch, StateMemberVyaw) = -sr * controlDelta_;
-
-    // transferFunction_(StateMemberYaw, StateMemberVpitch) = sr * cpi * controlDelta_;
-    // transferFunction_(StateMemberYaw, StateMemberVyaw) = cr * cpi * controlDelta_;
-    transferFunction_(StateMemberVx, StateMemberAx) = 0;
-    transferFunction_(StateMemberVy, StateMemberAy) = 0;
-    transferFunction_(StateMemberVz, StateMemberAz) = 0;
+    transferFunction_(StateMemberVx, StateMemberAx) = controlDelta_;
+    transferFunction_(StateMemberVy, StateMemberAy) = controlDelta_;
+    transferFunction_(StateMemberVz, StateMemberAz) = controlDelta_;
 
     // Prepare the transfer function Jacobian. This function is analytically derived from the
     // transfer function.
@@ -299,11 +273,11 @@ namespace RobotLocalization
                     (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
     double dFR_dP = (cpi * cpi * sr * pitchVel + cpi * cpi * cr * yawVel) * controlDelta_;
 
-    xCoeff = -sy * cp;
-    yCoeff = -sy * sp * sr - cy * cr;
-    zCoeff = -sy * sp * cr + cy * sr;
-    double dFx_dY = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
-                    (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
+    // xCoeff = -sy * cp;
+    // yCoeff = -sy * sp * sr - cy * cr;
+    // zCoeff = -sy * sp * cr + cy * sr;
+    // double dFx_dY = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
+    //                 (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
 
     yCoeff = sy * sp * cr - cy * sr;
     zCoeff = -sy * sp * sr - cy * cr;
@@ -317,11 +291,11 @@ namespace RobotLocalization
     double dFy_dP = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
                     (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
 
-    xCoeff = cy * cp;
-    yCoeff = cy * sp * sr - sy * cr;
-    zCoeff = cy * sp * cr + sy * sr;
-    double dFy_dY = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
-                    (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
+    // xCoeff = cy * cp;
+    // yCoeff = cy * sp * sr - sy * cr;
+    // zCoeff = cy * sp * cr + sy * sr;
+    // double dFy_dY = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
+    //                 (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
 
     yCoeff = cp * cr;
     zCoeff = -cp * sr;
@@ -341,12 +315,12 @@ namespace RobotLocalization
     transferFunctionJacobian_(StateMemberX, StateMemberRoll) = dFx_dR;
     transferFunctionJacobian_(StateMemberX, StateMemberPitch) = dFx_dP;
 
-    transferFunctionJacobian_(StateMemberX, StateMemberYaw) = -sy*controlDelta_*xVel;
+    transferFunctionJacobian_(StateMemberX, StateMemberYaw) = -sy*controlDelta_*controlVelosity_(ControlMemberVx);
 
     transferFunctionJacobian_(StateMemberY, StateMemberRoll) = dFy_dR;
     transferFunctionJacobian_(StateMemberY, StateMemberPitch) = dFy_dP;
 
-    transferFunctionJacobian_(StateMemberY, StateMemberYaw) = cy*controlDelta_*xVel;
+    transferFunctionJacobian_(StateMemberY, StateMemberYaw) = cy*controlDelta_*controlVelosity_(ControlMemberVx);
 
     transferFunctionJacobian_(StateMemberZ, StateMemberRoll) = dFz_dR;
     transferFunctionJacobian_(StateMemberZ, StateMemberPitch) = dFz_dP;
@@ -356,10 +330,21 @@ namespace RobotLocalization
     transferFunctionJacobian_(StateMemberYaw, StateMemberRoll) = dFY_dR;
     transferFunctionJacobian_(StateMemberYaw, StateMemberPitch) = dFY_dP;
 
-    FB_DEBUG("Transfer function is:\n" << transferFunction_ <<
-             "\nTransfer function Jacobian is:\n" << transferFunctionJacobian_ <<
-             "\nProcess noise covariance is:\n" << processNoiseCovariance_ <<
-             "\nCurrent state is:\n" << state_ << "\n");
+    // if (displayCounter_>=30)
+    // {
+    //   ROS_INFO_STREAM("Transfer function is:\n" << transferFunction_ <<
+    //           "\nTransfer function Jacobian is:\n" << transferFunctionJacobian_ <<
+    //           "\nProcess noise covariance is:\n" << processNoiseCovariance_ <<
+    //           "\nCurrent state is:\n" << state_ << "\n");
+    //   // std::cout << "Joc x yaw: " << -sy*controlDelta_*xVel
+    //   //           << "\tJoc y yaw: " << cy*controlDelta_*xVel  << std::endl;
+
+    //   // std::cout << "sy: " << sy
+    //   //           << "\tcontrolDelta: " << controlDelta_
+    //   //           << "\txVel: \n" << xVel << std::endl;
+    //   displayCounter_=0;
+    // }
+    // displayCounter_++;
 
     Eigen::MatrixXd *processNoiseCovariance = &processNoiseCovariance_;
 
@@ -370,38 +355,16 @@ namespace RobotLocalization
       processNoiseCovariance = &dynamicProcessNoiseCovariance_;
     }
 
-    // // (1) Apply control terms, which are actually accelerations
-    // // if use_control=false => prepare_control={} => controlAcceleration_ = 0 => state_(velocities, accelerations)(t+1) = state_(velocities, accelerations)(t)
-    // state_(StateMemberVroll) += controlAcceleration_(ControlMemberVroll) * delta;
-    // state_(StateMemberVpitch) += controlAcceleration_(ControlMemberVpitch) * delta;
-    // state_(StateMemberVyaw) += controlAcceleration_(ControlMemberVyaw) * delta;
-
-    // state_(StateMemberAx) = (controlUpdateVector_[ControlMemberVx] ?
-    //   controlAcceleration_(ControlMemberVx) : state_(StateMemberAx));
-    // state_(StateMemberAy) = (controlUpdateVector_[ControlMemberVy] ?
-    //   controlAcceleration_(ControlMemberVy) : state_(StateMemberAy));
-    // state_(StateMemberAz) = (controlUpdateVector_[ControlMemberVz] ?
-    //   controlAcceleration_(ControlMemberVz) : state_(StateMemberAz));
-
     // (1) predict x, y and yaw using control msg
     if (useControl_)
     {
-      // controlDelta_ = latestControlTime_ -  lastControlTime_;
-      state_(StateMemberX) += controlVelosity_(ControlMemberVx)* cos(state_(StateMemberYaw)) * controlDelta_;
-      state_(StateMemberY) += controlVelosity_(ControlMemberVx) * sin(state_(StateMemberYaw)) * controlDelta_;
+      state_(StateMemberX) += controlVelosity_(ControlMemberVx)* cy * controlDelta_;
+      state_(StateMemberY) += controlVelosity_(ControlMemberVx) * sy * controlDelta_;
       state_(StateMemberYaw) += controlVelosity_(ControlMemberVyaw) * controlDelta_;
       // std::cout << "control vx: " << controlVelosity_(ControlMemberVx)
       //           << "\tcontrol vy: " << controlVelosity_(ControlMemberVy)
       //           << "\tcontrol vyaw: " << controlVelosity_(ControlMemberVyaw)
       //           << "\tcontrolDelta_: " << controlDelta_ <<std::endl;
-
-      // std::cout << "X: " << state_(StateMemberX)
-      //           << "\tY:"<< state_(StateMemberY)
-      //           << "\tYaw:" << state_(StateMemberYaw) << std::endl;
-
-      // std::cout << "delta_y: " << controlVelosity_(ControlMemberVy) * sin(state_(StateMemberYaw)) * controlDelta_ << std::endl;
-      // lastControlTime_ = latestControlTime_;
-
     }
 
     // (2) Project the state forward: x = Ax + Bu (really, x = f(x, u))
@@ -417,7 +380,10 @@ namespace RobotLocalization
     estimateErrorCovariance_ = (transferFunctionJacobian_ *
                                 estimateErrorCovariance_ *
                                 transferFunctionJacobian_.transpose());
-    estimateErrorCovariance_.noalias() += controlDelta_ * (*processNoiseCovariance); // + Q
+    estimateErrorCovariance_.noalias() += (transferFunctionJacobian_*
+                                          (*processNoiseCovariance) *
+                                          transferFunctionJacobian_.transpose()) +
+                                          0.1*(*processNoiseCovariance); // + (J*Qu*J' + Q1)
 
     FB_DEBUG("Predicted estimate error covariance is:\n" << estimateErrorCovariance_ <<
              "\n\n--------------------- /Ekf::predict ----------------------\n");
