@@ -87,6 +87,7 @@ class Ukf: public FilterBase
     //! @param[in] delta - The time step over which to predict.
     //!
     void predict(const double referenceTime, const double delta);
+    void predict();
 
   protected:
     //! @brief The UKF sigma points

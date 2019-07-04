@@ -80,6 +80,12 @@ class Ekf: public FilterBase
     //! @param[in] delta - The time step over which to predict.
     //!
     void predict(const double referenceTime, const double delta);
+
+    //! @brief Carries out the predict step in the predict/update cycle using one specific source.
+    //!
+    //! Projects the state and error matrices forward using motion input
+    //!
+    void predict();
 };
 
 }  // namespace RobotLocalization

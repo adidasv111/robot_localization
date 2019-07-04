@@ -274,7 +274,9 @@ namespace RobotLocalization
 
     // Update the filter with this control term
     filter_.setControl(latestControl_, msg->header.stamp.toSec());
-    filter_.predict(0, 0);
+    // std::cout << "in controlCallback: " << useControlPredict_ << std::endl;
+    if (useControlPredict_)
+      filter_.predict();
   }
 
   template<typename T>
@@ -596,17 +598,6 @@ namespace RobotLocalization
         // processing messages from the history. Otherwise, we may get a new measurement, store the "old" latest
         // control, then receive a control, call setControl, and then overwrite that value with this one (i.e., with
         // the "old" control we associated with the measurement).
-        // if (useControl_ && restoredMeasurementCount > 0)
-        // {
-        //   filter_.setControl(measurement->latestControl_, measurement->latestControlTime_);
-        //   restoredMeasurementCount--;
-        // }
-
-        // if (useControl_)
-        // {
-        //   filter_.setControl(measurement->latestControl_, measurement->latestControlTime_);
-        //   // restoredMeasurementCount--;
-        // }
 
         // This will call predict and, if necessary, correct
         filter_.processMeasurement(*(measurement.get()));
@@ -653,9 +644,8 @@ namespace RobotLocalization
       double lastUpdateDelta = currentTimeSec - filter_.getLastMeasurementTime();
 
       filter_.validateDelta(lastUpdateDelta);
-      // TODO: If this predict is commented, the correct step doesn't work any more, why?
-      // std::cout << "In filter_.getInitializedStatus(), predict is called." << std::endl;
-      // filter_.predict(currentTimeSec, lastUpdateDelta);
+      if(!useControlPredict_)
+        filter_.predict(currentTimeSec, lastUpdateDelta);
 
       // Update the last measurement time and last update time
       filter_.setLastMeasurementTime(filter_.getLastMeasurementTime() + lastUpdateDelta);
@@ -839,6 +829,7 @@ namespace RobotLocalization
     std::vector<double> decelerationGains(TWIST_SIZE, 1.0);
 
     nhLocal_.param("use_control", useControl_, false);
+    nhLocal_.param("use_control_predict", useControlPredict_, false);
     nhLocal_.param("stamped_control", stampedControl, false);
     nhLocal_.param("control_timeout", controlTimeout, sensorTimeout);
 
@@ -1465,15 +1456,24 @@ namespace RobotLocalization
 
       if (stampedControl)
       {
-        // controlSub_ = nh_.subscribe<geometry_msgs::TwistStamped>("cmd_vel", 1, &RosFilter<T>::controlCallback, this);
-        controlSub_ = nh_.subscribe<nav_msgs::Odometry>("odom", 100, &RosFilter<T>::controlCallback, this);
+        controlSub_ = nh_.subscribe<geometry_msgs::TwistStamped>("cmd_vel", 1, &RosFilter<T>::controlCallback, this);
       }
       else
       {
-        // controlSub_ = nh_.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &RosFilter<T>::controlCallback, this);
-        controlSub_ = nh_.subscribe<nav_msgs::Odometry>("odom", 100, &RosFilter<T>::controlCallback, this);
+        controlSub_ = nh_.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &RosFilter<T>::controlCallback, this);
       }
     }
+
+    if (useControlPredict_)
+    {
+      latestControl_.resize(TWIST_SIZE);
+      latestControl_.setZero();
+
+      filter_.setControlPredictParams(controlUpdateVector, controlTimeout, accelerationLimits, accelerationGains,
+        decelerationLimits, decelerationGains);
+      controlSub_ = nh_.subscribe<nav_msgs::Odometry>("odom", 100, &RosFilter<T>::controlCallback, this);
+    }
+
 
     /* Warn users about:
     *    1. Multiple non-differential input sources

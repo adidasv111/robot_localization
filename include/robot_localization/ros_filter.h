@@ -631,6 +631,10 @@ template<class T> class RosFilter
     //!
     bool useControl_;
 
+    //! @brief Whether or not we apply the control term in predict step
+    //!
+    bool useControlPredict_;
+
     //! @brief Start the Filter disabled at startup
     //!
     //! If this is true, the filter reads parameters and prepares publishers and subscribes
