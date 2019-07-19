@@ -262,6 +262,24 @@ namespace RobotLocalization
   }
 
   template<typename T>
+  void RosFilter<T>::controlCallback(const nav_msgs::Odometry::ConstPtr &msg)
+  {
+    latestControl_(ControlMemberVx) = msg->twist.twist.linear.x;
+    latestControl_(ControlMemberVy) = msg->twist.twist.linear.y;
+    latestControl_(ControlMemberVz) = msg->twist.twist.linear.z;
+    latestControl_(ControlMemberVroll) = msg->twist.twist.angular.x;
+    latestControl_(ControlMemberVpitch) = msg->twist.twist.angular.y;
+    latestControl_(ControlMemberVyaw) = msg->twist.twist.angular.z;
+    latestControlTime_ = msg->header.stamp;
+
+    // Update the filter with this control term
+    filter_.setControl(latestControl_, msg->header.stamp.toSec());
+    // std::cout << "in controlCallback: " << useControlPredict_ << std::endl;
+    if (useControlPredict_)
+      filter_.predict();
+  }
+
+  template<typename T>
   void RosFilter<T>::enqueueMeasurement(const std::string &topicName,
                                         const Eigen::VectorXd &measurement,
                                         const Eigen::MatrixXd &measurementCovariance,
@@ -580,11 +598,6 @@ namespace RobotLocalization
         // processing messages from the history. Otherwise, we may get a new measurement, store the "old" latest
         // control, then receive a control, call setControl, and then overwrite that value with this one (i.e., with
         // the "old" control we associated with the measurement).
-        if (useControl_ && restoredMeasurementCount > 0)
-        {
-          filter_.setControl(measurement->latestControl_, measurement->latestControlTime_);
-          restoredMeasurementCount--;
-        }
 
         // This will call predict and, if necessary, correct
         filter_.processMeasurement(*(measurement.get()));
@@ -631,7 +644,8 @@ namespace RobotLocalization
       double lastUpdateDelta = currentTimeSec - filter_.getLastMeasurementTime();
 
       filter_.validateDelta(lastUpdateDelta);
-      filter_.predict(currentTimeSec, lastUpdateDelta);
+      if(!useControlPredict_)
+        filter_.predict(currentTimeSec, lastUpdateDelta);
 
       // Update the last measurement time and last update time
       filter_.setLastMeasurementTime(filter_.getLastMeasurementTime() + lastUpdateDelta);
@@ -815,6 +829,7 @@ namespace RobotLocalization
     std::vector<double> decelerationGains(TWIST_SIZE, 1.0);
 
     nhLocal_.param("use_control", useControl_, false);
+    nhLocal_.param("use_control_predict", useControlPredict_, false);
     nhLocal_.param("stamped_control", stampedControl, false);
     nhLocal_.param("control_timeout", controlTimeout, sensorTimeout);
 
@@ -1449,6 +1464,17 @@ namespace RobotLocalization
       }
     }
 
+    if (useControlPredict_)
+    {
+      latestControl_.resize(TWIST_SIZE);
+      latestControl_.setZero();
+
+      filter_.setControlPredictParams(controlUpdateVector, controlTimeout, accelerationLimits, accelerationGains,
+        decelerationLimits, decelerationGains);
+      controlSub_ = nh_.subscribe<nav_msgs::Odometry>("odom", 100, &RosFilter<T>::controlCallback, this);
+    }
+
+
     /* Warn users about:
     *    1. Multiple non-differential input sources
     *    2. No absolute *or* velocity measurements for pose variables
@@ -1830,7 +1856,6 @@ namespace RobotLocalization
       // their received measurements
       ros::spinOnce();
       curTime = ros::Time::now();
-
       if (toggledOn_)
       {
         // Now we'll integrate any measurements we've received if requested

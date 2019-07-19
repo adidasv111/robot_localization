@@ -248,6 +248,8 @@ class FilterBase
     //!
     virtual void predict(const double referenceTime, const double delta) = 0;
 
+    virtual void predict() = 0;
+
     //! @brief Does some final preprocessing, carries out the predict/update cycle
     //!
     //! @param[in] measurement - The measurement object to fuse into the filter
@@ -273,6 +275,12 @@ class FilterBase
     void setControlParams(const std::vector<int> &updateVector, const double controlTimeout,
       const std::vector<double> &accelerationLimits, const std::vector<double> &accelerationGains,
       const std::vector<double> &decelerationLimits, const std::vector<double> &decelerationGains);
+
+
+    void setControlPredictParams(const std::vector<int> &updateVector, const double controlTimeout,
+      const std::vector<double> &accelerationLimits, const std::vector<double> &accelerationGains,
+      const std::vector<double> &decelerationLimits, const std::vector<double> &decelerationGains);
+
 
     //! @brief Sets the filter into debug mode
     //!
@@ -409,6 +417,10 @@ class FilterBase
     //!
     Eigen::VectorXd controlAcceleration_;
 
+    //! @brief Variable that gets updated every time we process a measurement and we have a valid control
+    //!
+    Eigen::VectorXd controlVelocity_;
+
     //! @brief Gains applied to deceleration derived from control term
     //!
     std::vector<double> decelerationGains_;
@@ -428,6 +440,10 @@ class FilterBase
     //! @brief Timeout value, in seconds, after which a control is considered stale
     //!
     double controlTimeout_;
+
+    //! @brief debug output counter, to decrease the rate of debug messages' display
+    //!
+    int displayCounter_;
 
     //! @brief Covariance matrices can be incredibly unstable. We can
     //! add a small value to it at each iteration to help maintain its
@@ -466,6 +482,10 @@ class FilterBase
     //! @brief The time of reception of the most recent control term
     //!
     double latestControlTime_;
+
+    //! @brief The time difference between control term
+    //!
+    double controlDelta_;
 
     //! @brief Holds the last predicted state of the filter
     //!
@@ -528,6 +548,10 @@ class FilterBase
     //! dynamic process noise covariance matrix
     //!
     bool useDynamicProcessNoiseCovariance_;
+  public:
+    //! @brief Whether or not we apply the control term in predict step
+    //!
+    bool useControlPredict_;
 
   private:
     //! @brief Whether or not the filter is in debug mode

@@ -187,6 +187,7 @@ void RobotLocalizationEstimator::extrapolate(const EstimatorState& boundary_stat
   double delta = requested_time - boundary_state.time_stamp;
 
   // Use the filter to predict
+  std::cout << "RobotLocalizationEstimator::extrapolate is called" << std::endl;
   filter_->predict(boundary_state.time_stamp, delta);
 
   state_at_req_time.time_stamp = requested_time;

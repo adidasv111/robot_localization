@@ -62,6 +62,7 @@ namespace RobotLocalization
     debug_(false),
     debugStream_(NULL),
     useControl_(false),
+    useControlPredict_(false),
     useDynamicProcessNoiseCovariance_(false)
   {
     reset();
@@ -221,12 +222,14 @@ namespace RobotLocalization
       if (delta > 0)
       {
         validateDelta(delta);
-        predict(measurement.time_, delta);
+        // std::cout << "in processmeasurement: " << !useControlPredict_ << std::endl;
+        if (!useControlPredict_)
+          predict(measurement.time_, delta);
 
         // Return this to the user
         predictedState_ = state_;
       }
-
+      // std::cout << "correct step is called" << std::endl;
       correct(measurement);
     }
     else
@@ -264,7 +267,8 @@ namespace RobotLocalization
 
   void FilterBase::setControl(const Eigen::VectorXd &control, const double controlTime)
   {
-    latestControl_ = control;
+    controlVelocity_ = control;
+    controlDelta_ = controlTime - latestControlTime_;
     latestControlTime_ = controlTime;
   }
 
@@ -273,6 +277,19 @@ namespace RobotLocalization
     const std::vector<double> &decelerationLimits, const std::vector<double> &decelerationGains)
   {
     useControl_ = true;
+    controlUpdateVector_ = updateVector;
+    controlTimeout_ = controlTimeout;
+    accelerationLimits_ = accelerationLimits;
+    accelerationGains_ = accelerationGains;
+    decelerationLimits_ = decelerationLimits;
+    decelerationGains_ = decelerationGains;
+  }
+
+  void FilterBase::setControlPredictParams(const std::vector<int> &updateVector, const double controlTimeout,
+    const std::vector<double> &accelerationLimits, const std::vector<double> &accelerationGains,
+    const std::vector<double> &decelerationLimits, const std::vector<double> &decelerationGains)
+  {
+    useControlPredict_ = true;
     controlUpdateVector_ = updateVector;
     controlTimeout_ = controlTimeout;
     accelerationLimits_ = accelerationLimits;

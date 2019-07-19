@@ -45,7 +45,7 @@
 #include <vector>
 
 #include <assert.h>
-
+#include <ros/console.h>
 namespace RobotLocalization
 {
   Ukf::Ukf(std::vector<double> args) :
@@ -391,4 +391,8 @@ namespace RobotLocalization
              "\n\n--------------------- /Ukf::predict ----------------------\n");
   }
 
+  void Ukf::predict()
+  {
+    ROS_ERROR("Ukf::predict() not implemented yet.\n");
+  }
 }  // namespace RobotLocalization

@@ -149,6 +149,11 @@ template<class T> class RosFilter
     //!
     void controlCallback(const geometry_msgs::TwistStamped::ConstPtr &msg);
 
+    //! @brief Callback method for receiving stamped control input
+    //! @param[in] msg - The ROS odom twist message to take in
+    //!
+    void controlCallback(const nav_msgs::Odometry::ConstPtr &msg);
+
     //! @brief Adds a measurement to the queue of measurements to be processed
     //!
     //! @param[in] topicName - The name of the measurement source (only used for debugging)
@@ -625,6 +630,10 @@ template<class T> class RosFilter
     //! @brief Whether or not we use a control term
     //!
     bool useControl_;
+
+    //! @brief Whether or not we apply the control term in predict step
+    //!
+    bool useControlPredict_;
 
     //! @brief Start the Filter disabled at startup
     //!
