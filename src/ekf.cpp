@@ -548,10 +548,10 @@ namespace RobotLocalization
     estimateErrorCovariance_ = (transferFunctionJacobian_ *
                                 estimateErrorCovariance_ *
                                 transferFunctionJacobian_.transpose());
-    estimateErrorCovariance_.noalias() += (transferFunctionJacobian_*
+    estimateErrorCovariance_.noalias() += ((transferFunctionJacobian_*
                                           (*processNoiseCovariance) *
                                           transferFunctionJacobian_.transpose()) +
-                                          0.1*(*processNoiseCovariance); // + (J*Qu*J' + Q1)
+                                          0.1*(*processNoiseCovariance)) * controlDelta_; // + (J*Qu*J' + Q1)
 
     FB_DEBUG("Predicted estimate error covariance is:\n" << estimateErrorCovariance_ <<
              "\n\n--------------------- /Ekf::predict ----------------------\n");
