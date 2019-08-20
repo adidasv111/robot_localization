@@ -479,24 +479,15 @@ namespace RobotLocalization
     double dFY_dP = (sr * tp * cpi * pitchVel - cr * tp * cpi * yawVel) * controlDelta_;
 
     // Much of the transfer function Jacobian is identical to the transfer function
+    double delta_yaw = controlVelocity_(ControlMemberVyaw) * controlDelta_;
     transferFunctionJacobian_ = transferFunction_;
-    transferFunctionJacobian_(StateMemberX, StateMemberRoll) = dFx_dR;
-    transferFunctionJacobian_(StateMemberX, StateMemberPitch) = dFx_dP;
+    transferFunctionJacobian_(StateMemberX, StateMemberYaw) = -sin(yaw+delta_yaw/2.0)*controlDelta_*controlVelocity_(ControlMemberVx);
+    transferFunctionJacobian_(StateMemberY, StateMemberYaw) = cos(yaw+delta_yaw/2.0)*controlDelta_*controlVelocity_(ControlMemberVx);
 
-    transferFunctionJacobian_(StateMemberX, StateMemberYaw) = -sy*controlDelta_*controlVelocity_(ControlMemberVx);
-
-    transferFunctionJacobian_(StateMemberY, StateMemberRoll) = dFy_dR;
-    transferFunctionJacobian_(StateMemberY, StateMemberPitch) = dFy_dP;
-
-    transferFunctionJacobian_(StateMemberY, StateMemberYaw) = cy*controlDelta_*controlVelocity_(ControlMemberVx);
-
-    transferFunctionJacobian_(StateMemberZ, StateMemberRoll) = dFz_dR;
-    transferFunctionJacobian_(StateMemberZ, StateMemberPitch) = dFz_dP;
-    transferFunctionJacobian_(StateMemberRoll, StateMemberRoll) = dFR_dR;
-    transferFunctionJacobian_(StateMemberRoll, StateMemberPitch) = dFR_dP;
-    transferFunctionJacobian_(StateMemberPitch, StateMemberRoll) = dFP_dR;
-    transferFunctionJacobian_(StateMemberYaw, StateMemberRoll) = dFY_dR;
-    transferFunctionJacobian_(StateMemberYaw, StateMemberPitch) = dFY_dP;
+    transferFunctionJacobian_(StateMemberX, StateMemberVx) = cos(yaw+delta_yaw/2.0)*controlDelta_;
+    transferFunctionJacobian_(StateMemberX, StateMemberVyaw) = -sin(yaw+delta_yaw/2.0)*controlDelta_*controlDelta_/2.0;
+    transferFunctionJacobian_(StateMemberY, StateMemberVx) = sin(yaw+delta_yaw/2.0)*controlDelta_;
+    transferFunctionJacobian_(StateMemberY, StateMemberVyaw) = cos(yaw+delta_yaw/2.0)*controlDelta_*controlDelta_/2.0;
 
     // if (displayCounter_>=30)
     // {
@@ -526,9 +517,9 @@ namespace RobotLocalization
     // (1) predict x, y and yaw using control msg
     if (useControlPredict_)
     {
-      state_(StateMemberX) += controlVelocity_(ControlMemberVx)* cy * controlDelta_;
-      state_(StateMemberY) += controlVelocity_(ControlMemberVx) * sy * controlDelta_;
-      state_(StateMemberYaw) += controlVelocity_(ControlMemberVyaw) * controlDelta_;
+      state_(StateMemberX) += controlVelocity_(ControlMemberVx)* cos(yaw+delta_yaw/2.0) * controlDelta_;
+      state_(StateMemberY) += controlVelocity_(ControlMemberVx) * sin(yaw+delta_yaw/2.0) * controlDelta_;
+      state_(StateMemberYaw) += delta_yaw;
       // std::cout << "control vx: " << controlVelocity_(ControlMemberVx)
       //           << "\tcontrol vy: " << controlVelocity_(ControlMemberVy)
       //           << "\tcontrol vyaw: " << controlVelocity_(ControlMemberVyaw)
