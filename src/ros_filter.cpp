@@ -179,6 +179,12 @@ namespace RobotLocalization
 
       // Make sure we're actually updating at least one of these variables
       std::vector<int> updateVectorCorrected = callbackData.updateVector_;
+      // std::cout << "update vector: " << std::endl;
+      // for (auto i:callbackData.updateVector_)
+      // {
+      //   std::cout << i << " ";
+      // }
+      // std::cout << std::endl;
 
       // Prepare the twist data for inclusion in the filter
       if (prepareAcceleration(msg, topicName, targetFrame, updateVectorCorrected, measurement,
@@ -2915,6 +2921,12 @@ namespace RobotLocalization
         measurement(StateMemberRoll) = roll;
         measurement(StateMemberPitch) = pitch;
         measurement(StateMemberYaw) = yaw;
+
+        // initial state
+        std::cout << "initial measurement." << std::endl;
+        measurement(StateMemberRl) = BaseRadius;
+        measurement(StateMemberRr) = BaseRadius;
+        measurement(StateMemberD) = BaseLength;
 
         measurementCovariance.block(0, 0, POSE_SIZE, POSE_SIZE) = covarianceRotated.block(0, 0, POSE_SIZE, POSE_SIZE);
 

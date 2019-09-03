@@ -38,6 +38,7 @@
 #include <limits>
 #include <sstream>
 #include <vector>
+#include <ros/console.h>
 
 namespace RobotLocalization
 {
@@ -238,10 +239,22 @@ namespace RobotLocalization
 
       // Initialize the filter, but only with the values we're using
       size_t measurementLength = measurement.updateVector_.size();
+      std::vector<int> temp_updateVector(measurement.updateVector_.begin(), measurement.updateVector_.end());
+      temp_updateVector[temp_updateVector.size()-1] = 0;
+      std::cout << "update vector: " << std::endl;
+      for (auto i:temp_updateVector)
+      {
+        std::cout << i << " ";
+      }
+      std::cout << std::endl;
       for (size_t i = 0; i < measurementLength; ++i)
       {
-        state_[i] = (measurement.updateVector_[i] ? measurement.measurement_[i] : state_[i]);
+        state_[i] = (temp_updateVector[i] ? measurement.measurement_[i] : state_[i]);
       }
+
+      ROS_INFO_STREAM("initialization---------" <<
+            //  "delta is " << delta << "\n" <<
+             "state is " << state_ << "\n");
 
       // Same for covariance
       for (size_t i = 0; i < measurementLength; ++i)
