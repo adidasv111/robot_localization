@@ -242,11 +242,24 @@ namespace RobotLocalization
     // ROS_INFO_STREAM("---------------------- Ekf::predict ----------------------1\n" <<
     //         //  "delta is " << delta << "\n" <<
     //          "state is " << state_ << "\n");
-    double delta_yaw = state_(StateMemberVyaw)*delta;
+    double vl = state_(StateMemberVx) - 0.5*BaseLength*state_(StateMemberVyaw);
+    double vr = state_(StateMemberVx) + 0.5*BaseLength*state_(StateMemberVyaw);
+    double wl = vl/BaseRadius;
+    double wr = vr/BaseRadius;
+
+    double vx = (wr*state_(StateMemberRr) + wl*state_(StateMemberRl))/2.0;
+    double vyaw = (wr*state_(StateMemberRr) - wl*state_(StateMemberRl))/state_(StateMemberD);
+
+    double delta_yaw = vyaw*delta;
     // update state base on odometry kinematic
-    state_(StateMemberX) += state_(StateMemberVx)* cos(state_(StateMemberVyaw)+delta_yaw/2.0) * delta;
-    state_(StateMemberY) += state_(StateMemberVx) * sin(state_(StateMemberVyaw)+delta_yaw/2.0) * delta;
+    state_(StateMemberX) += vx * cos(state_(StateMemberYaw)+delta_yaw/2.0) * delta;
+    state_(StateMemberY) += vx * sin(state_(StateMemberYaw)+delta_yaw/2.0) * delta;
     state_(StateMemberYaw) += delta_yaw;
+    // double delta_yaw = state_(StateMemberVyaw)*delta;
+    // // update state base on odometry kinematic
+    // state_(StateMemberX) += state_(StateMemberVx)* cos(state_(StateMemberVyaw)+delta_yaw/2.0) * delta;
+    // state_(StateMemberY) += state_(StateMemberVx) * sin(state_(StateMemberVyaw)+delta_yaw/2.0) * delta;
+    // state_(StateMemberYaw) += delta_yaw;
 
     // ROS_INFO_STREAM("---------------------- Ekf::predict ----------------------2\n" <<
     //         //  "delta is " << delta << "\n" <<
@@ -257,16 +270,6 @@ namespace RobotLocalization
 
     double sy = ::sin(state_(StateMemberYaw));
     double cy = ::cos(state_(StateMemberYaw));
-
-    // compute controlAcceleration_ if use_control = true
-    // prepareControl(referenceTime, delta);
-
-    // Prepare the transfer function Jacobian. This function is analytically derived from the
-    // transfer function.
-    double vl = state_(StateMemberVx) - 0.5*BaseLength*state_(StateMemberVyaw);
-    double vr = state_(StateMemberVx) + 0.5*BaseLength*state_(StateMemberVyaw);
-    double wl = vl/BaseRadius;
-    double wr = vr/BaseRadius;
 
     // Much of the transfer function Jacobian is identical to the transfer function
     transferFunctionJacobian_ = transferFunction_;
@@ -279,6 +282,11 @@ namespace RobotLocalization
     transferFunctionJacobian_(StateMemberYaw, StateMemberRl) =  -delta*wl/state_(StateMemberD);
     transferFunctionJacobian_(StateMemberYaw, StateMemberRr) =  delta*wr/state_(StateMemberD);
     transferFunctionJacobian_(StateMemberYaw, StateMemberD) = delta*((vl-vr)/(state_(StateMemberD)*state_(StateMemberD)));
+
+    transferFunctionJacobian_(StateMemberX, StateMemberVx) = cy*delta;
+    transferFunctionJacobian_(StateMemberX, StateMemberVyaw) = -sy*delta*delta/2.0;
+    transferFunctionJacobian_(StateMemberY, StateMemberVx) = sy*delta;
+    transferFunctionJacobian_(StateMemberY, StateMemberVyaw) = cy*delta*delta/2.0;
 
     FB_DEBUG("Transfer function is:\n" << transferFunction_ <<
              "\nTransfer function Jacobian is:\n" << transferFunctionJacobian_ <<
