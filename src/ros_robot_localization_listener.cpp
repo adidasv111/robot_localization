@@ -235,9 +235,9 @@ void RosRobotLocalizationListener::odomAndAccelCallback(const nav_msgs::Odometry
   }
 
   // Acceleration: Linear
-  state.state(StateMemberAx) = accel.accel.accel.linear.x;
-  state.state(StateMemberAy) = accel.accel.accel.linear.y;
-  state.state(StateMemberAz) = accel.accel.accel.linear.z;
+  // state.state(StateMemberAx) = accel.accel.accel.linear.x;
+  // state.state(StateMemberAy) = accel.accel.accel.linear.y;
+  // state.state(StateMemberAz) = accel.accel.accel.linear.z;
 
   // Acceleration: Angular is not available in state
 

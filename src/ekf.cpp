@@ -167,21 +167,6 @@ namespace RobotLocalization
     // FB_DEBUG("Current state subset is:\n" << stateSubset <<
     //          "\nMeasurement subset is:\n" << measurementSubset <<
     //          "\nMeasurement covariance subset is:\n" << measurementCovarianceSubset <<
-    if (measurement.topicName_ != "odom0_twist")
-    {
-      std::cout << "topic name is: " << measurement.topicName_ << std::endl;
-      ROS_INFO_STREAM("\nState-to-measurement subset is:\n" << stateToMeasurementSubset << "\n");
-      std::cout << "update index: " << std::endl;
-      for (size_t i = 0; i < updateSize; ++i)
-      {
-        std::cout << updateIndices[i] << " ";
-      }
-      std::cout << std::endl;
-
-      ROS_INFO_STREAM("---------------------- Ekf::predict ----------------------1\n" <<
-        //  "delta is " << delta << "\n" <<
-          "state is " << state_ << "\n");
-    }
 
 
     // (1) Compute the Kalman gain: K = (PH') / (HPH' + R)
@@ -226,6 +211,23 @@ namespace RobotLocalization
                                             kalmanGainSubset.transpose();
       // Handle wrapping of angles
       wrapStateAngles();
+
+      if (measurement.topicName_ != "odom0_twist")
+      {
+        std::cout << "topic name is: " << measurement.topicName_ << std::endl;
+        ROS_INFO_STREAM("\nState-to-measurement subset is:\n" << stateToMeasurementSubset << "\n");
+        std::cout << "update index: " << std::endl;
+        for (size_t i = 0; i < updateSize; ++i)
+        {
+          std::cout << updateIndices[i] << " ";
+        }
+        std::cout << std::endl;
+
+        ROS_INFO_STREAM("---------------------- Ekf::correct ----------------------1\n" <<
+          //  "delta is " << delta << "\n" <<
+            "state is " << state_ <<
+            "Kalman gain subset is:\n" << kalmanGainSubset * innovationSubset << "\n");
+      }
 
       FB_DEBUG("Kalman gain subset is:\n" << kalmanGainSubset <<
                "\nInnovation is:\n" << innovationSubset <<
@@ -320,9 +322,9 @@ namespace RobotLocalization
     double zVel = state_(StateMemberVz);
     double pitchVel = state_(StateMemberVpitch);
     double yawVel = state_(StateMemberVyaw);
-    double xAcc = state_(StateMemberAx);
-    double yAcc = state_(StateMemberAy);
-    double zAcc = state_(StateMemberAz);
+    // double xAcc = state_(StateMemberAx);
+    // double yAcc = state_(StateMemberAy);
+    // double zAcc = state_(StateMemberAz);
 
     // We'll need these trig calculations a lot.
     double sp = ::sin(pitch);
@@ -341,9 +343,9 @@ namespace RobotLocalization
 
     // Prepare the transfer function
 
-    transferFunction_(StateMemberVx, StateMemberAx) = controlDelta_;
-    transferFunction_(StateMemberVy, StateMemberAy) = controlDelta_;
-    transferFunction_(StateMemberVz, StateMemberAz) = controlDelta_;
+    // transferFunction_(StateMemberVx, StateMemberAx) = controlDelta_;
+    // transferFunction_(StateMemberVy, StateMemberAy) = controlDelta_;
+    // transferFunction_(StateMemberVz, StateMemberAz) = controlDelta_;
 
     // Prepare the transfer function Jacobian. This function is analytically derived from the
     // transfer function.
@@ -354,41 +356,41 @@ namespace RobotLocalization
 
     yCoeff = cy * sp * cr + sy * sr;
     zCoeff = -cy * sp * sr + sy * cr;
-    double dFx_dR = (yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
-                    (yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
-    double dFR_dR = 1.0 + (cr * tp * pitchVel - sr * tp * yawVel) * controlDelta_;
+    // double dFx_dR = (yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
+    //                 (yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
+    // double dFR_dR = 1.0 + (cr * tp * pitchVel - sr * tp * yawVel) * controlDelta_;
 
-    xCoeff = -cy * sp;
-    yCoeff = cy * cp * sr;
-    zCoeff = cy * cp * cr;
-    double dFx_dP = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
-                    (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
-    double dFR_dP = (cpi * cpi * sr * pitchVel + cpi * cpi * cr * yawVel) * controlDelta_;
+    // xCoeff = -cy * sp;
+    // yCoeff = cy * cp * sr;
+    // zCoeff = cy * cp * cr;
+    // double dFx_dP = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
+    //                 (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
+    // double dFR_dP = (cpi * cpi * sr * pitchVel + cpi * cpi * cr * yawVel) * controlDelta_;
 
-    yCoeff = sy * sp * cr - cy * sr;
-    zCoeff = -sy * sp * sr - cy * cr;
-    double dFy_dR = (yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
-                    (yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
-    double dFP_dR = (-sr * pitchVel - cr * yawVel) * controlDelta_;
+    // yCoeff = sy * sp * cr - cy * sr;
+    // zCoeff = -sy * sp * sr - cy * cr;
+    // double dFy_dR = (yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
+    //                 (yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
+    // double dFP_dR = (-sr * pitchVel - cr * yawVel) * controlDelta_;
 
-    xCoeff = -sy * sp;
-    yCoeff = sy * cp * sr;
-    zCoeff = sy * cp * cr;
-    double dFy_dP = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
-                    (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
+    // xCoeff = -sy * sp;
+    // yCoeff = sy * cp * sr;
+    // zCoeff = sy * cp * cr;
+    // double dFy_dP = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
+    //                 (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
 
-    yCoeff = cp * cr;
-    zCoeff = -cp * sr;
-    double dFz_dR = (yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
-                    (yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
-    double dFY_dR = (cr * cpi * pitchVel - sr * cpi * yawVel) * controlDelta_;
+    // yCoeff = cp * cr;
+    // zCoeff = -cp * sr;
+    // double dFz_dR = (yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
+    //                 (yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
+    // double dFY_dR = (cr * cpi * pitchVel - sr * cpi * yawVel) * controlDelta_;
 
-    xCoeff = -cp;
-    yCoeff = -sp * sr;
-    zCoeff = -sp * cr;
-    double dFz_dP = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
-                    (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
-    double dFY_dP = (sr * tp * cpi * pitchVel - cr * tp * cpi * yawVel) * controlDelta_;
+    // xCoeff = -cp;
+    // yCoeff = -sp * sr;
+    // zCoeff = -sp * cr;
+    // double dFz_dP = (xCoeff * xVel + yCoeff * yVel + zCoeff * zVel) * controlDelta_ +
+    //                 (xCoeff * xAcc + yCoeff * yAcc + zCoeff * zAcc) * oneHalfATSquared;
+    // double dFY_dP = (sr * tp * cpi * pitchVel - cr * tp * cpi * yawVel) * controlDelta_;
 
     // Much of the transfer function Jacobian is identical to the transfer function
     double delta_yaw = controlVelocity_(ControlMemberVyaw) * controlDelta_;

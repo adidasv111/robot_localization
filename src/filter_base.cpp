@@ -124,9 +124,9 @@ namespace RobotLocalization
     processNoiseCovariance_(StateMemberVroll, StateMemberVroll) = 0.01;
     processNoiseCovariance_(StateMemberVpitch, StateMemberVpitch) = 0.01;
     processNoiseCovariance_(StateMemberVyaw, StateMemberVyaw) = 0.02;
-    processNoiseCovariance_(StateMemberAx, StateMemberAx) = 0.01;
-    processNoiseCovariance_(StateMemberAy, StateMemberAy) = 0.01;
-    processNoiseCovariance_(StateMemberAz, StateMemberAz) = 0.015;
+    // processNoiseCovariance_(StateMemberAx, StateMemberAx) = 0.01;
+    // processNoiseCovariance_(StateMemberAy, StateMemberAy) = 0.01;
+    // processNoiseCovariance_(StateMemberAz, StateMemberAz) = 0.015;
 
     dynamicProcessNoiseCovariance_ = processNoiseCovariance_;
   }
