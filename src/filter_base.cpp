@@ -64,6 +64,10 @@ namespace RobotLocalization
     debugStream_(NULL),
     useControl_(false),
     useControlPredict_(false),
+    useOdomErrorModel_(false),
+    odomErrorTolerance_(0.01),
+    wheelsRadius_(0.062),
+    baseLength_(0.451),
     useDynamicProcessNoiseCovariance_(false)
   {
     reset();
@@ -223,9 +227,14 @@ namespace RobotLocalization
       if (delta > 0)
       {
         validateDelta(delta);
-        // std::cout << "in processmeasurement: " << !useControlPredict_ << std::endl;
-        if (!useControlPredict_)
+        if (!useControlPredict_ && !useOdomErrorModel_)
+        {
           predict(measurement.time_, delta);
+        }
+        else
+        {
+          predict_odom_error_model(measurement.time_, delta);
+        }
 
         // Return this to the user
         predictedState_ = state_;
@@ -309,6 +318,14 @@ namespace RobotLocalization
     accelerationGains_ = accelerationGains;
     decelerationLimits_ = decelerationLimits;
     decelerationGains_ = decelerationGains;
+  }
+
+  void FilterBase::setOdomErrorModelParams(const double odomErrorTolerance, const double BaseRadius, const double baseLength)
+  {
+    odomErrorTolerance_ = odomErrorTolerance;
+    wheelsRadius_ = BaseRadius;
+    baseLength_ = baseLength;
+    useOdomErrorModel_ =  true;
   }
 
   void FilterBase::setDebug(const bool debug, std::ostream *outStream)

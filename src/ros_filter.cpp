@@ -63,7 +63,7 @@ namespace RobotLocalization
       printDiagnostics_(true),
       gravitationalAcc_(9.80665),
       publishTransform_(true),
-      publishAcceleration_(false),
+      publishOdomParams_(false),
       twoDMode_(false),
       useControl_(false),
       smoothLaggedData_(false),
@@ -395,7 +395,7 @@ namespace RobotLocalization
   }
 
   template<typename T>
-  bool RosFilter<T>::getFilteredAccelMessage(geometry_msgs::AccelWithCovarianceStamped &message)
+  bool RosFilter<T>::getOdomParamMessage(geometry_msgs::AccelWithCovarianceStamped &message)
   {
     // If the filter has received a measurement at some point...
     if (filter_.getInitializedStatus())
@@ -405,21 +405,21 @@ namespace RobotLocalization
       const Eigen::MatrixXd &estimateErrorCovariance = filter_.getEstimateErrorCovariance();
 
       // //! Fill out the accel_msg
-      // message.accel.accel.linear.x = state(StateMemberAx);
-      // message.accel.accel.linear.y = state(StateMemberAy);
-      // message.accel.accel.linear.z = state(StateMemberAz);
+      message.accel.accel.linear.x = state(StateMemberRl);
+      message.accel.accel.linear.y = state(StateMemberRr);
+      message.accel.accel.linear.z = state(StateMemberD);
 
       // Fill the covariance (only the left-upper matrix since we are not estimating
       // the rotational accelerations arround the axes
-      for (size_t i = 0; i < ACCELERATION_SIZE; i++)
-      {
-        for (size_t j = 0; j < ACCELERATION_SIZE; j++)
-        {
-          // We use the POSE_SIZE since the accel cov matrix of ROS is 6x6
-          message.accel.covariance[POSE_SIZE * i + j] =
-              estimateErrorCovariance(i + POSITION_A_OFFSET, j + POSITION_A_OFFSET);
-        }
-      }
+      // for (size_t i = 0; i < ACCELERATION_SIZE; i++)
+      // {
+      //   for (size_t j = 0; j < ACCELERATION_SIZE; j++)
+      //   {
+      //     // We use the POSE_SIZE since the accel cov matrix of ROS is 6x6
+      //     message.accel.covariance[POSE_SIZE * i + j] =
+      //         estimateErrorCovariance(i + POSITION_R_OFFSET, j + POSITION_R_OFFSET);
+      //   }
+      // }
 
       // Fill header information
       message.header.stamp = ros::Time(filter_.getLastMeasurementTime());
@@ -649,8 +649,14 @@ namespace RobotLocalization
       double lastUpdateDelta = currentTimeSec - filter_.getLastMeasurementTime();
 
       filter_.validateDelta(lastUpdateDelta);
-      if(!useControlPredict_)
+      if (!useControlPredict_ && !useOdomErrorModel_)
+      {
         filter_.predict(currentTimeSec, lastUpdateDelta);
+      }
+      else
+      {
+        filter_.predict_odom_error_model(currentTimeSec, lastUpdateDelta);
+      }
 
       // Update the last measurement time and last update time
       filter_.setLastMeasurementTime(filter_.getLastMeasurementTime() + lastUpdateDelta);
@@ -779,8 +785,8 @@ namespace RobotLocalization
     // Whether we're publshing the world_frame->base_link_frame transform
     nhLocal_.param("publish_tf", publishTransform_, true);
 
-    // Whether we're publishing the acceleration state transform
-    nhLocal_.param("publish_acceleration", publishAcceleration_, false);
+    // Whether we're publishing the odom parameters
+    nhLocal_.param("publish_odom_params", publishOdomParams_, false);
 
     // Transform future dating
     double offsetTmp;
@@ -835,8 +841,12 @@ namespace RobotLocalization
 
     nhLocal_.param("use_control", useControl_, false);
     nhLocal_.param("use_control_predict", useControlPredict_, false);
+    nhLocal_.param("use_odom_error_model", useOdomErrorModel_, false);
     nhLocal_.param("stamped_control", stampedControl, false);
     nhLocal_.param("control_timeout", controlTimeout, sensorTimeout);
+    nhLocal_.param("odom_error_tolerance", odomErrorTolerance_, 0.001);
+    nhLocal_.param("wheels_radius", wheelsRadius_, 0.062);
+    nhLocal_.param("base_length", baseLength_, 0.451);
 
     if (useControl_)
     {
@@ -1163,8 +1173,8 @@ namespace RobotLocalization
         std::fill(poseUpdateVec.begin() + POSITION_V_OFFSET,
                   poseUpdateVec.begin() + POSITION_V_OFFSET + TWIST_SIZE,
                   0);
-        std::fill(poseUpdateVec.begin() + POSITION_A_OFFSET,
-                  poseUpdateVec.begin() + POSITION_A_OFFSET + ACCELERATION_SIZE,
+        std::fill(poseUpdateVec.begin() + POSITION_R_OFFSET,
+                  poseUpdateVec.begin() + POSITION_R_OFFSET + ACCELERATION_SIZE,
                   0);
 
         int poseUpdateSum = std::accumulate(poseUpdateVec.begin(), poseUpdateVec.end(), 0);
@@ -1337,16 +1347,16 @@ namespace RobotLocalization
         std::fill(poseUpdateVec.begin() + POSITION_V_OFFSET,
                   poseUpdateVec.begin() + POSITION_V_OFFSET + TWIST_SIZE,
                   0);
-        std::fill(poseUpdateVec.begin() + POSITION_A_OFFSET,
-                  poseUpdateVec.begin() + POSITION_A_OFFSET + ACCELERATION_SIZE,
+        std::fill(poseUpdateVec.begin() + POSITION_R_OFFSET,
+                  poseUpdateVec.begin() + POSITION_R_OFFSET + ACCELERATION_SIZE,
                   0);
 
         std::vector<int> twistUpdateVec = updateVec;
         std::fill(twistUpdateVec.begin() + POSITION_OFFSET,
                   twistUpdateVec.begin() + POSITION_OFFSET + POSE_SIZE,
                   0);
-        std::fill(twistUpdateVec.begin() + POSITION_A_OFFSET,
-                  twistUpdateVec.begin() + POSITION_A_OFFSET + ACCELERATION_SIZE,
+        std::fill(twistUpdateVec.begin() + POSITION_R_OFFSET,
+                  twistUpdateVec.begin() + POSITION_R_OFFSET + ACCELERATION_SIZE,
                   0);
 
         std::vector<int> accelUpdateVec = updateVec;
@@ -1477,6 +1487,11 @@ namespace RobotLocalization
       filter_.setControlPredictParams(controlUpdateVector, controlTimeout, accelerationLimits, accelerationGains,
         decelerationLimits, decelerationGains);
       controlSub_ = nh_.subscribe<nav_msgs::Odometry>("odom", 100, &RosFilter<T>::controlCallback, this);
+    }
+
+    if (useOdomErrorModel_)
+    {
+      filter_.setOdomErrorModelParams(odomErrorTolerance_,wheelsRadius_,baseLength_);
     }
 
 
@@ -1834,10 +1849,10 @@ namespace RobotLocalization
     tf2_ros::TransformBroadcaster worldTransformBroadcaster;
 
     // Optional acceleration publisher
-    ros::Publisher accelPub;
-    if (publishAcceleration_)
+    ros::Publisher odomParamPub;
+    if (publishOdomParams_)
     {
-      accelPub = nh_.advertise<geometry_msgs::AccelWithCovarianceStamped>("accel/filtered", 20);
+      odomParamPub = nh_.advertise<geometry_msgs::AccelWithCovarianceStamped>("odom_params", 20);
     }
 
     const ros::Duration loop_cycle_time(1.0 / frequency_);
@@ -1987,9 +2002,9 @@ namespace RobotLocalization
 
       // Publish the acceleration if desired and filter is initialized
       geometry_msgs::AccelWithCovarianceStamped filteredAcceleration;
-      if (publishAcceleration_ && getFilteredAccelMessage(filteredAcceleration))
+      if (publishOdomParams_ && getOdomParamMessage(filteredAcceleration))
       {
-        accelPub.publish(filteredAcceleration);
+        odomParamPub.publish(filteredAcceleration);
       }
 
       /* Diagnostics can behave strangely when playing back from bag
@@ -2416,7 +2431,7 @@ namespace RobotLocalization
   //                        covarianceRotated,
   //                        topicName,
   //                        updateVector,
-  //                        POSITION_A_OFFSET,
+  //                        POSITION_R_OFFSET,
   //                        ACCELERATION_SIZE);
 
   //   RF_DEBUG("Original measurement as tf object: " << accTmp <<
@@ -2496,11 +2511,11 @@ namespace RobotLocalization
 
   //     // Now use the mask values to determine which update vector values should be true
   //     // updateVector[StateMemberAx] = static_cast<int>(
-  //     //   maskAcc.getRow(StateMemberAx - POSITION_A_OFFSET).length() >= 1e-6);
+  //     //   maskAcc.getRow(StateMemberAx - POSITION_R_OFFSET).length() >= 1e-6);
   //     // updateVector[StateMemberAy] = static_cast<int>(
-  //     //   maskAcc.getRow(StateMemberAy - POSITION_A_OFFSET).length() >= 1e-6);
+  //     //   maskAcc.getRow(StateMemberAy - POSITION_R_OFFSET).length() >= 1e-6);
   //     // updateVector[StateMemberAz] = static_cast<int>(
-  //     //   maskAcc.getRow(StateMemberAz - POSITION_A_OFFSET).length() >= 1e-6);
+  //     //   maskAcc.getRow(StateMemberAz - POSITION_R_OFFSET).length() >= 1e-6);
 
   //     RF_DEBUG(msg->header.frame_id << "->" << targetFrame << " transform:\n" << targetFrameTrans <<
   //              "\nAfter applying transform to " << targetFrame << ", update vector is:\n" << updateVector <<
@@ -2532,7 +2547,7 @@ namespace RobotLocalization
   //     // measurement(StateMemberAz) = accTmp.getZ();
 
   //     // Copy the covariances
-  //     measurementCovariance.block(POSITION_A_OFFSET, POSITION_A_OFFSET, ACCELERATION_SIZE, ACCELERATION_SIZE) =
+  //     measurementCovariance.block(POSITION_R_OFFSET, POSITION_R_OFFSET, ACCELERATION_SIZE, ACCELERATION_SIZE) =
   //       covarianceRotated.block(0, 0, ACCELERATION_SIZE, ACCELERATION_SIZE);
 
   //     // 7. Handle 2D mode
@@ -2922,10 +2937,9 @@ namespace RobotLocalization
         measurement(StateMemberYaw) = yaw;
 
         // initial state
-        std::cout << "initial measurement." << std::endl;
-        measurement(StateMemberRl) = BaseRadius;
-        measurement(StateMemberRr) = BaseRadius;
-        measurement(StateMemberD) = BaseLength;
+        measurement(StateMemberRl) = wheelsRadius_;
+        measurement(StateMemberRr) = wheelsRadius_;
+        measurement(StateMemberD) = baseLength_;
 
         measurementCovariance.block(0, 0, POSE_SIZE, POSE_SIZE) = covarianceRotated.block(0, 0, POSE_SIZE, POSE_SIZE);
 

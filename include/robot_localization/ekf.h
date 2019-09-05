@@ -86,6 +86,8 @@ class Ekf: public FilterBase
     //! Projects the state and error matrices forward using motion input
     //!
     void predict();
+
+    void predict_odom_error_model(const double referenceTime, const double delta);
 };
 
 }  // namespace RobotLocalization

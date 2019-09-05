@@ -395,4 +395,9 @@ namespace RobotLocalization
   {
     ROS_ERROR("Ukf::predict() not implemented yet.\n");
   }
+
+  void Ukf::predict_odom_error_model(const double referenceTime, const double delta)
+  {
+    ROS_ERROR("Ukf::predict_odom_error_model() not implemented yet.\n");
+  }
 }  // namespace RobotLocalization

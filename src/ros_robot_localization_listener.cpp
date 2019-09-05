@@ -246,7 +246,7 @@ void RosRobotLocalizationListener::odomAndAccelCallback(const nav_msgs::Odometry
   {
     for ( unsigned int j = 0; j < ACCELERATION_SIZE; j++ )
     {
-      state.covariance(POSITION_A_OFFSET + i, POSITION_A_OFFSET + j) = accel.accel.covariance[i*TWIST_SIZE + j];
+      state.covariance(POSITION_R_OFFSET + i, POSITION_R_OFFSET + j) = accel.accel.covariance[i*TWIST_SIZE + j];
     }
   }
 
