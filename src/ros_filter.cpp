@@ -653,7 +653,7 @@ namespace RobotLocalization
       {
         filter_.predict(currentTimeSec, lastUpdateDelta);
       }
-      else
+      else if (useOdomErrorModel_)
       {
         filter_.predict_odom_error_model(currentTimeSec, lastUpdateDelta);
       }

@@ -231,7 +231,7 @@ namespace RobotLocalization
         {
           predict(measurement.time_, delta);
         }
-        else
+        else if (useOdomErrorModel_)
         {
           predict_odom_error_model(measurement.time_, delta);
         }

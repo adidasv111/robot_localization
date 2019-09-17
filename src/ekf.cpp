@@ -578,7 +578,6 @@ namespace RobotLocalization
 
     FB_DEBUG("Predicted estimate error covariance is:\n" << estimateErrorCovariance_ <<
              "\n\n--------------------- /Ekf::predict ----------------------\n");
-
   }
 
 }  // namespace RobotLocalization
