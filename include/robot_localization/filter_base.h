@@ -250,6 +250,8 @@ class FilterBase
 
     virtual void predict() = 0;
 
+    virtual void predict_odom_error_model(const double referenceTime, const double delta) = 0;
+
     //! @brief Does some final preprocessing, carries out the predict/update cycle
     //!
     //! @param[in] measurement - The measurement object to fuse into the filter
@@ -281,6 +283,7 @@ class FilterBase
       const std::vector<double> &accelerationLimits, const std::vector<double> &accelerationGains,
       const std::vector<double> &decelerationLimits, const std::vector<double> &decelerationGains);
 
+    void setOdomErrorModelParams(const double odomErrorTolerance, const double BaseRadius, const double baseLength);
 
     //! @brief Sets the filter into debug mode
     //!
@@ -543,16 +546,29 @@ class FilterBase
     //! @brief Whether or not we apply the control term
     //!
     bool useControl_;
+    //! @brief Whether or not we apply the control term in predict step
+    //!
+    bool useControlPredict_;
+    //! @brief Whether or not we use the odometry error model in predict step
+    //!
+    bool useOdomErrorModel_;
+
+    //! @brief Odometry error tolernace in meter
+    //!
+    double odomErrorTolerance_;
+
+    //! @brief Odometry wheel radius in meter
+    //!
+    double wheelsRadius_;
+
+    //! @brief distance between wheels in meter
+    //!
+    double baseLength_;
 
     //! @brief If true, uses the robot's vehicle state and the static process noise covariance matrix to generate a
     //! dynamic process noise covariance matrix
     //!
     bool useDynamicProcessNoiseCovariance_;
-  public:
-    //! @brief Whether or not we apply the control term in predict step
-    //!
-    bool useControlPredict_;
-
   private:
     //! @brief Whether or not the filter is in debug mode
     //!

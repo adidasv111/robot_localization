@@ -193,7 +193,7 @@ template<class T> class RosFilter
     //! @param[out] message - The standard ROS acceleration message to be filled
     //! @return true if the filter is initialized, false otherwise
     //!
-    bool getFilteredAccelMessage(geometry_msgs::AccelWithCovarianceStamped &message);
+    bool getOdomParamMessage(geometry_msgs::AccelWithCovarianceStamped &message);
 
     //! @brief Callback method for receiving all IMU messages
     //! @param[in] msg - The ROS IMU message to take in.
@@ -635,6 +635,22 @@ template<class T> class RosFilter
     //!
     bool useControlPredict_;
 
+    //! @brief Whether or not we use the odometry error model in predict step
+    //!
+    bool useOdomErrorModel_;
+
+    //! @brief Odometry error tolernace in meter
+    //!
+    double odomErrorTolerance_;
+
+    //! @brief Odometry wheel radius in meter
+    //!
+    double wheelsRadius_;
+
+    //! @brief distance between wheels in meter
+    //!
+    double baseLength_;
+
     //! @brief Start the Filter disabled at startup
     //!
     //! If this is true, the filter reads parameters and prepares publishers and subscribes
@@ -666,7 +682,7 @@ template<class T> class RosFilter
 
     //! @brief Whether we publish the acceleration
     //!
-    bool publishAcceleration_;
+    bool publishOdomParams_;
 
     //! @brief An implicitly time ordered queue of past filter states used for smoothing.
     //

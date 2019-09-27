@@ -38,6 +38,7 @@
 #include <limits>
 #include <sstream>
 #include <vector>
+#include <ros/console.h>
 
 namespace RobotLocalization
 {
@@ -63,6 +64,10 @@ namespace RobotLocalization
     debugStream_(NULL),
     useControl_(false),
     useControlPredict_(false),
+    useOdomErrorModel_(false),
+    odomErrorTolerance_(0.01),
+    wheelsRadius_(0.062),
+    baseLength_(0.451),
     useDynamicProcessNoiseCovariance_(false)
   {
     reset();
@@ -123,9 +128,9 @@ namespace RobotLocalization
     processNoiseCovariance_(StateMemberVroll, StateMemberVroll) = 0.01;
     processNoiseCovariance_(StateMemberVpitch, StateMemberVpitch) = 0.01;
     processNoiseCovariance_(StateMemberVyaw, StateMemberVyaw) = 0.02;
-    processNoiseCovariance_(StateMemberAx, StateMemberAx) = 0.01;
-    processNoiseCovariance_(StateMemberAy, StateMemberAy) = 0.01;
-    processNoiseCovariance_(StateMemberAz, StateMemberAz) = 0.015;
+    // processNoiseCovariance_(StateMemberAx, StateMemberAx) = 0.01;
+    // processNoiseCovariance_(StateMemberAy, StateMemberAy) = 0.01;
+    // processNoiseCovariance_(StateMemberAz, StateMemberAz) = 0.015;
 
     dynamicProcessNoiseCovariance_ = processNoiseCovariance_;
   }
@@ -222,9 +227,14 @@ namespace RobotLocalization
       if (delta > 0)
       {
         validateDelta(delta);
-        // std::cout << "in processmeasurement: " << !useControlPredict_ << std::endl;
-        if (!useControlPredict_)
+        if (!useControlPredict_ && !useOdomErrorModel_)
+        {
           predict(measurement.time_, delta);
+        }
+        else if (useOdomErrorModel_)
+        {
+          predict_odom_error_model(measurement.time_, delta);
+        }
 
         // Return this to the user
         predictedState_ = state_;
@@ -238,10 +248,22 @@ namespace RobotLocalization
 
       // Initialize the filter, but only with the values we're using
       size_t measurementLength = measurement.updateVector_.size();
+      std::vector<int> temp_updateVector(measurement.updateVector_.begin(), measurement.updateVector_.end());
+      temp_updateVector[temp_updateVector.size()-1] = 0;
+      std::cout << "update vector: " << std::endl;
+      for (auto i:temp_updateVector)
+      {
+        std::cout << i << " ";
+      }
+      std::cout << std::endl;
       for (size_t i = 0; i < measurementLength; ++i)
       {
-        state_[i] = (measurement.updateVector_[i] ? measurement.measurement_[i] : state_[i]);
+        state_[i] = (temp_updateVector[i] ? measurement.measurement_[i] : state_[i]);
       }
+
+      ROS_INFO_STREAM("initialization---------" <<
+            //  "delta is " << delta << "\n" <<
+             "state is " << state_ << "\n");
 
       // Same for covariance
       for (size_t i = 0; i < measurementLength; ++i)
@@ -296,6 +318,14 @@ namespace RobotLocalization
     accelerationGains_ = accelerationGains;
     decelerationLimits_ = decelerationLimits;
     decelerationGains_ = decelerationGains;
+  }
+
+  void FilterBase::setOdomErrorModelParams(const double odomErrorTolerance, const double BaseRadius, const double baseLength)
+  {
+    odomErrorTolerance_ = odomErrorTolerance;
+    wheelsRadius_ = BaseRadius;
+    baseLength_ = baseLength;
+    useOdomErrorModel_ =  true;
   }
 
   void FilterBase::setDebug(const bool debug, std::ostream *outStream)

@@ -88,6 +88,7 @@ class Ukf: public FilterBase
     //!
     void predict(const double referenceTime, const double delta);
     void predict();
+    void predict_odom_error_model(const double referenceTime, const double delta);
 
   protected:
     //! @brief The UKF sigma points

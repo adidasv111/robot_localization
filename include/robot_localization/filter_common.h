@@ -52,9 +52,9 @@ enum StateMembers
   StateMemberVroll,
   StateMemberVpitch,
   StateMemberVyaw,
-  StateMemberAx,
-  StateMemberAy,
-  StateMemberAz
+  StateMemberRl,
+  StateMemberRr,
+  StateMemberD
 };
 
 //! @brief Enumeration that defines the control vector
@@ -77,7 +77,7 @@ const int POSITION_OFFSET = StateMemberX;
 const int ORIENTATION_OFFSET = StateMemberRoll;
 const int POSITION_V_OFFSET = StateMemberVx;
 const int ORIENTATION_V_OFFSET = StateMemberVroll;
-const int POSITION_A_OFFSET = StateMemberAx;
+const int POSITION_R_OFFSET = StateMemberRl;
 
 //! @brief Pose and twist messages each
 //! contain six variables
